@@ -41,6 +41,103 @@ Real-time Database - Firestore: Every analysis report and user submission was de
 
 User Management & Hosting - Firebase: As part of the GCP ecosystem, Firebase Authentication was planned for secure user management, and Firebase Hosting was considered for its global CDN capabilities before we settled on our final deployment.
 
+Appendix: Detailed Google Cloud Backend Setup (Initial Design)
+This section outlines the steps to deploy the initial, robust backend on Google Cloud Run. This server-side setup is more secure and scalable, as it hides API keys and leverages Firestore for data persistence.
+
+Phase 1: Google Cloud Project Setup
+Create a New Project: In the Google Cloud Console, create a new project (e.g., satya-ai-project).
+
+Get Gemini API Key: Go to Google AI Studio to create and copy a new API Key for the Gemini API.
+
+Enable Firestore: Search for "Firestore" in the console, create a new "Native mode" database, and select a region (e.g., asia-south1).
+
+Phase 2: Deploying the Backend on Cloud Run
+Navigate to Cloud Run: In the Google Cloud Console, search for and go to the Cloud Run service.
+
+Create a New Service: Click "+ Write a function".
+
+Configure Service:
+
+Service name: satya-ai-backend
+
+Region: asia-south1 (Mumbai)
+
+Authentication: Select Allow unauthenticated invocations.
+
+Click Next.
+
+Configure Code:
+
+On the code editor page, set the Runtime to Python (e.g., Python 3.10 or newer). This will change the files to main.py and requirements.txt.
+
+Paste the Backend Code:
+
+In requirements.txt, paste the following:
+
+functions-framework
+google-generativeai
+google-cloud-firestore
+firebase-admin
+
+In main.py, paste the full Python code:
+
+import google.generativeai as genai
+import json
+import functions_framework
+import firebase_admin
+from firebase_admin import credentials, firestore
+from datetime import datetime
+
+# Paste your Gemini API Key here
+API_KEY = "YOUR_GEMINI_API_KEY_HERE"
+
+try:
+    firebase_admin.initialize_app()
+except ValueError:
+    pass
+
+db = firestore.client()
+genai.configure(api_key=API_KEY)
+
+@functions_framework.http
+def analyze_content(request):
+    if request.method == 'OPTIONS':
+        headers = {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'POST',
+            'Access-Control-Allow-Headers': 'Content-Type',
+            'Access-Control-Max-Age': '3600'
+        }
+        return ('', 204, headers)
+
+    headers = {'Access-Control-Allow-Origin': '*'}
+
+    request_json = request.get_json(silent=True)
+    if not request_json or 'text' not in request_json:
+        return (json.dumps({"error": "No text provided"}), 400, headers)
+
+    content_to_check = request_json['text']
+    # ... (rest of the prompt and logic)
+
+    try:
+        model = genai.GenerativeModel('gemini-pro')
+        response = model.generate_content(prompt)
+        json_response = json.loads(response.text.strip().replace("```json", "").replace("```", ""))
+
+        doc_ref = db.collection('analysis_reports').document()
+        doc_ref.set({
+            'original_text': content_to_check,
+            'analysis_result': json_response,
+            'timestamp': datetime.utcnow()
+        })
+
+        return (json.dumps(json_response), 200, headers)
+
+    except Exception as e:
+        return (json.dumps({"error": "AI model failed", "details": str(e)}), 500, headers)
+
+Deploy: Click the Deploy button and wait for the service to be created. The URL provided is your secure backend endpoint.
+
 Technology Stack
 Frontend: React.js (Vite), Material-UI
 
