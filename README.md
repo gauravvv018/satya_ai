@@ -1,6 +1,6 @@
 SatyaAI - AI-Powered Misinformation Detector
 
-A project by Team Cloud Bots for the Gen AI Exchange Hackathon
+A project by Team Cloud Bots for the Gen AI Exchange Hackathon.
 
 SatyaAI is an innovative, real-time detection and education platform built on Google Cloud to combat the spread of fake news and digital misinformation in India. It goes beyond simple verification by using a multi-layered AI engine to analyze content, perform live fact-checking against credible sources, and educate users on the manipulation tactics they encounter.
 
